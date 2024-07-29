@@ -43,7 +43,6 @@
     let audioContext;
     let analyser;
     let microphone;
-    let recordingTimeout;
     let silenceTimeout;
     let currentUtterance = null;
     let isSpeaking = false;
@@ -88,21 +87,45 @@
                 }
                 addUserMessage(finalTranscript);
                 sendToGemini(finalTranscript);
+                startNewSTTSession(); // Start a new session after final result
             }
+        
+            // Reset silence detection
+            setSilenceDetection();
         };
 
         recognition.onerror = function(event) {
             console.error('Speech recognition error', event.error);
+            startNewSTTSession(); // Restart on error
         };
 
         recognition.onend = function() {
             if (isListening) {
-                recognition.start();  // Automatically restart recognition
+                startNewSTTSession();  // Automatically restart recognition
             } else {
                 recordButton.textContent = "말하기 시작";
                 stopAudioAnalysis();
             }
         };
+    }
+
+    function setSilenceDetection() {
+        clearTimeout(silenceTimeout);
+        silenceTimeout = setTimeout(() => {
+            startNewSTTSession(); // Start a new session on silence
+        }, 3000); // Increased silence detection time to 3 seconds
+    }
+
+    function startNewSTTSession() {
+        if (recognition) {
+            recognition.stop();
+            setTimeout(() => {
+                if (isListening) {
+                    recognition.start();
+                    setSilenceDetection();
+                }
+            }, 100);
+        }
     }
 
     function updateUserMessage(message) {
@@ -160,11 +183,7 @@
                 stopSpeaking(); // Stop any ongoing TTS
             }
             recognition.start();
-            
-            // Set timeout to detect silence and stop recording
-            silenceTimeout = setTimeout(() => {
-                stopRecording();
-            }, 10000);
+            setSilenceDetection();
         }
     }
 
@@ -176,15 +195,6 @@
             stopAudioAnalysis();
             clearTimeout(silenceTimeout);
         }
-    }
-
-    function startNewSTTSession() {
-        if (isListening) {
-            stopRecording();
-        }
-        setTimeout(() => {
-            startRecording();
-        }, 100);
     }
 
     recordButton.addEventListener('click', toggleRecording);
