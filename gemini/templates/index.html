@@ -46,6 +46,7 @@
     let recordingTimeout;
     let silenceTimeout;
     let currentUtterance = null;
+    let isSpeaking = false;
 
     // Initialize Web Speech API
     if ('webkitSpeechRecognition' in window) {
@@ -75,7 +76,9 @@
         
             if (interimTranscript.trim()) {
                 updateUserMessage(interimTranscript);
-                stopSpeaking(); // Stop TTS when user starts speaking
+                if (isSpeaking) {
+                    stopSpeaking(); // Stop TTS when user starts speaking
+                }
             }
         
             if (finalTranscript.trim()) {
@@ -153,7 +156,9 @@
 
     function startRecording() {
         if (recognition) {
-            stopSpeaking(); // Stop any ongoing TTS
+            if (isSpeaking) {
+                stopSpeaking(); // Stop any ongoing TTS
+            }
             recognition.start();
             
             // Set timeout to detect silence and stop recording
@@ -243,7 +248,9 @@
     }
 
     function speakResponse(text) {
-        stopSpeaking(); // Stop any ongoing speech
+        if (isSpeaking) {
+            stopSpeaking(); // Stop any ongoing speech
+        }
         const utterance = new SpeechSynthesisUtterance(text);
         utterance.lang = 'ko-KR';
         utterance.rate = 2;
@@ -256,13 +263,19 @@
         }
     
         currentUtterance = utterance; // Store the current utterance
+        isSpeaking = true;
+        utterance.onend = function() {
+            isSpeaking = false;
+            startNewSTTSession(); // Start listening again after TTS ends
+        };
         speechSynthesis.speak(utterance);
     }
 
     function stopSpeaking() {
-        if (currentUtterance) {
+        if (isSpeaking) {
             speechSynthesis.cancel();
             currentUtterance = null;
+            isSpeaking = false;
         }
     }
 
@@ -349,7 +362,6 @@
                 .then(data => {
                     addBotMessage(data.response);
                     speakResponse(data.response);
-                    startNewSTTSession();
                 })
                 .catch(error => {
                     console.error('Error:', error);
@@ -385,7 +397,6 @@
         .then(data => {
             addBotMessage(data.response);
             speakResponse(data.response);
-            startNewSTTSession();
         })
         .catch(error => {
             console.error('Error:', error);
