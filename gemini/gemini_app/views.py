@@ -82,7 +82,7 @@ def process_speech(request):
 
         try:
             # Prepare content for Gemini API
-            content = ["한국어로, "]
+            content = ["답변에서 *과 같은 특수문자는 빼고 답변해줘."]
             if user_text:
                 content.append(user_text)
             if file:
