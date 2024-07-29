@@ -5,6 +5,7 @@ To use Prototype, you can just run django at the Directory.
 
 python manage.py runserver
 
-The python version in this project is 3.12
+The python version in this project is 3.9
+AND used anaconda env
 
 Thank you.
