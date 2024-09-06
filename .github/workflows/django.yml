@@ -29,4 +29,4 @@ jobs:
         pip install -r ./gemini/requirements.txt
     - name: Run Tests
       run: |
-        python manage.py test
+        python ./gemini/manage.py test
